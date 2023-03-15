@@ -51,20 +51,19 @@ if __name__ == '__main__':
         with open(model_path + each+".sdf", "r") as f:
             pieces_xml[each] = f.read().replace('\n', '')
 
-    #board_setup = ['rnbqkbnr', 'pppppppp', '', '', '', '', 'PPPPPPPP', 'RNBQKBNR']
+    # board_setup = ['rnbqkbnr', 'pppppppp', '', '', '', '', 'PPPPPPPP', 'RNBQKBNR']
     board_setup = ['r******r', '', 'k*******', '', '', '*******K', '', 'R******R']
 
     piece_positionmap = dict()
     piece_names = []
 
-    #Location where chess pieces are spawned
-    # spawn_loc = deepcopy(board_pose)
-    # spawn_loc.position.x = 0.6
-    # spawn_loc.position.y = 0.6
-    # spawn_loc.position.z = 0.8
-
+    #Hard coded Location where chess pieces are spawned
     spawn_loc = Pose(position=Point(x=0.6, y=0.6, z=0.78))
+
+    # To publish the first piece has spawned
     spawn = rospy.Publisher("spawn_chessboard", Pose, queue_size=5)
+
+    # To let pnp know all the pieces have been spawned and it can start playing chess
     chess = rospy.Publisher("play_chess", Empty)
 
 
@@ -79,10 +78,15 @@ if __name__ == '__main__':
             if piece in list_pieces:
                 piece_name = "%s%d" % (piece, col)
                 piece_names.append(piece_name)
-
+                
+                # Spawning chess pieces
+                print(piece_name,row,col)
                 print(srv_call(piece_name, pieces_xml[piece], "/", spawn_loc, "world"))
 
+                #Publishing pose of pieces so that baxter can place it in the right location
                 spawn.publish(pose)
+
+                #Waiting for message from baxter to spawn the next piece
                 print(rospy.wait_for_message("spawn_next", Empty)) 
             
     
@@ -92,4 +96,5 @@ if __name__ == '__main__':
     rospy.set_param('piece_names', piece_names) # Pieces that will be part of the game
     rospy.set_param('pieces_xml', pieces_xml) # File paths to Gazebo models, i.e. SDF files
 
+    # To let baxter start playing chess
     chess.publish(Empty())

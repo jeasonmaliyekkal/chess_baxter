@@ -145,37 +145,37 @@ def pnp_callback(correct_piece_location, pnp):
 
 def play_chess(data, args):
     print("playing chess")
-    pnp =args[0]
-    overhead_orientation =args[1]
+    pnp = args[0]
+    overhead_orientation = args[1]
     positions = rospy.get_param('piece_target_position_map')
 
-    # grid references to pick from
-    pick_list = ['00', '70', '20']
-    # grid references for chess move
-    place_list = ['04', '50', '21']
+    # row, col of r0, r7, k2, K7, R0, R7
+    pick_list = ['00', '07', '20', '57', '70', '77']
+    # row, col to move the pieces to
+    place_list = ['04', '05', '21', '56', '50', '71']
 
-    pick_block_poses = list()
-    place_block_poses = list()
-
+    pick_poses = list()
+    place_poses = list()
+    
     # loop through each grid reference and add this to a list of block poses
     for pick in pick_list:
         p = positions[pick]
-        pick_block_poses.append(Pose(position=Point(x=p[0], y=p[1], z=p[2]), orientation=overhead_orientation))
+        pick_poses.append(Pose(position=Point(x=p[0], y=p[1], z=p[2]), orientation=overhead_orientation))
     
     for place in place_list:
         p = positions[place]
-        place_block_poses.append(Pose(position=Point(x=p[0], y=p[1], z=p[2]), orientation=overhead_orientation))
+        place_poses.append(Pose(position=Point(x=p[0], y=p[1], z=p[2]), orientation=overhead_orientation))
 
     # perform 3 moves
-    for i in range(3):
+    for i in range(5):
         if rospy.is_shutdown():
             break
 
         print("\nPicking...")
-        pnp.pick(pick_block_poses[i])
+        pnp.pick(pick_poses[i])
 
         print("\nPlacing...")
-        pnp.place(place_block_poses[i])
+        pnp.place(place_poses[i])
 
 
 def main():
