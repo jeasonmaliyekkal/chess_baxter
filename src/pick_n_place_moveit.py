@@ -165,7 +165,7 @@ def play_chess(data, args):
     for i in range(6):
         if rospy.is_shutdown():
             break
-        print("\nPicking from %s and placing at %s" % pick_list[i],place_list[i])
+        print("\nPicking from %s and placing at %s" % (str(pick_list[i]),str(place_list[i])))
         pnp.pick(pick_poses[i])
         pnp.place(place_poses[i])
 
