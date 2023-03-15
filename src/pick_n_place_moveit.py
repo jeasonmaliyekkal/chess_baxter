@@ -15,11 +15,6 @@ from geometry_msgs.msg import (
     Quaternion,
 )
 
-from gazebo_msgs.srv import (
-    SpawnModel,
-    DeleteModel,
-)
-
 import baxter_interface
 import moveit_commander
 
@@ -124,27 +119,27 @@ class PickAndPlaceMoveIt(object):
         # retract to clear object
         self._retract()
 
-def pnp_callback(correct_piece_location, pnp):
+def pnp_callback(piece_place_loc, pnp):
 
     # Shift Z coords to convert from rviz to gazebo
-    correct_piece_location.position.z = correct_piece_location.position.z - 0.93
+    piece_place_loc.position.z = piece_place_loc.position.z - 0.93
 
     # Match orientation for gripper to be overhead and parallel to chess piece
     overhead_orientation = Quaternion(x=-0.0249590815779, y=0.999649402929, z=0.00737916180073, w=0.00486450832011)
-    correct_piece_location.orientation = overhead_orientation
-
+    piece_place_loc.orientation = overhead_orientation
 
     print("Starting Picking")
     pnp.pick(Pose(position=Point(x=0.6, y=0.6, z=0.78-0.93),orientation=overhead_orientation))
     print("Starting Placing")
-    pnp.place(correct_piece_location)
+    pnp.place(piece_place_loc)
     print('Placing Occured')
     
     # Placing has complete, ping spawn_chessboard to start next loop/spawn next piece ready for pnp
     pnp._publish_move.publish(Empty())
 
 def play_chess(data, args):
-    print("playing chess")
+
+    print("\nPlaying chess")
     pnp = args[0]
     overhead_orientation = args[1]
     positions = rospy.get_param('piece_target_position_map')
@@ -156,25 +151,22 @@ def play_chess(data, args):
 
     pick_poses = list()
     place_poses = list()
-    
-    # loop through each grid reference and add this to a list of block poses
+
+    # loop through pick an place lists and get coordinates of each grid
     for pick in pick_list:
-        p = positions[pick]
-        pick_poses.append(Pose(position=Point(x=p[0], y=p[1], z=p[2]), orientation=overhead_orientation))
+        coord = positions[pick]
+        pick_poses.append(Pose(position=Point(x = coord[0], y = coord[1], z = coord[2]), orientation=overhead_orientation))
     
     for place in place_list:
-        p = positions[place]
-        place_poses.append(Pose(position=Point(x=p[0], y=p[1], z=p[2]), orientation=overhead_orientation))
-
-    # perform 3 moves
-    for i in range(5):
+        coord = positions[place]
+        place_poses.append(Pose(position=Point(x = coord[0], y = coord[1], z = coord[2]), orientation=overhead_orientation))
+    
+    # perform 6 moves
+    for i in range(6):
         if rospy.is_shutdown():
             break
-
-        print("\nPicking...")
+        print("\nPicking from %s and placing at %s" % pick_list[i],place_list[i])
         pnp.pick(pick_poses[i])
-
-        print("\nPlacing...")
         pnp.place(place_poses[i])
 
 
@@ -183,9 +175,6 @@ def main():
     rospy.init_node("ik_pick_and_place_moveit")
 
     rospy.wait_for_message("/robot/sim/started", Empty)
-
-
-
 
     limb = 'left'
     hover_distance = 0.15  # meters
@@ -197,15 +186,14 @@ def main():
 
     # Move to the desired starting angles
     pnp.move_to_start(starting_pose)
+
+    # Subscribing to spawn_chessboard to place the piece in the correct position and invoke callback
     spawn_chessboard_subscriber = rospy.Subscriber("spawn_chessboard", Pose, pnp_callback, pnp)
+
+    # Subscribing to play_chess to let baxter start playing chess
     play_chess_subscriber = rospy.Subscriber("play_chess", Empty, play_chess, (pnp, overhead_orientation))
 
-
-    
-
     rospy.spin()
-
-
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -5,7 +5,6 @@ from geometry_msgs.msg import *
 from copy import deepcopy
 from std_msgs.msg import (
     Empty,
-    String,
 )
 
 # http://wiki.ros.org/simulator_gazebo/Tutorials/ListOfMaterials
