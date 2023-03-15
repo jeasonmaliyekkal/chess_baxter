@@ -3,7 +3,7 @@ import sys
 import copy
 
 import rospy
-#import rospkg
+import rospkg
 
 from std_msgs.msg import (
     Empty,
@@ -143,6 +143,40 @@ def pnp_callback(correct_piece_location, pnp):
     # Placing has complete, ping spawn_chessboard to start next loop/spawn next piece ready for pnp
     pnp._publish_move.publish(Empty())
 
+def play_chess(data, args):
+    print("playing chess")
+    pnp =args[0]
+    overhead_orientation =args[1]
+    positions = rospy.get_param('piece_target_position_map')
+
+    # grid references to pick from
+    pick_list = ['00', '70', '20']
+    # grid references for chess move
+    place_list = ['04', '50', '21']
+
+    pick_block_poses = list()
+    place_block_poses = list()
+
+    # loop through each grid reference and add this to a list of block poses
+    for pick in pick_list:
+        p = positions[pick]
+        pick_block_poses.append(Pose(position=Point(x=p[0], y=p[1], z=p[2]), orientation=overhead_orientation))
+    
+    for place in place_list:
+        p = positions[place]
+        place_block_poses.append(Pose(position=Point(x=p[0], y=p[1], z=p[2]), orientation=overhead_orientation))
+
+    # perform 3 moves
+    for i in range(3):
+        if rospy.is_shutdown():
+            break
+
+        print("\nPicking...")
+        pnp.pick(pick_block_poses[i])
+
+        print("\nPlacing...")
+        pnp.place(place_block_poses[i])
+
 
 def main():
     moveit_commander.roscpp_initialize(sys.argv)
@@ -151,8 +185,7 @@ def main():
     rospy.wait_for_message("/robot/sim/started", Empty)
 
 
-    positions = rospy.get_param('piece_target_position_map')
-    piece_names = rospy.get_param('piece_names')
+
 
     limb = 'left'
     hover_distance = 0.15  # meters
@@ -165,7 +198,10 @@ def main():
     # Move to the desired starting angles
     pnp.move_to_start(starting_pose)
     spawn_chessboard_subscriber = rospy.Subscriber("spawn_chessboard", Pose, pnp_callback, pnp)
+    play_chess_subscriber = rospy.Subscriber("play_chess", Empty, play_chess, (pnp, overhead_orientation))
 
+
+    
 
     rospy.spin()
 

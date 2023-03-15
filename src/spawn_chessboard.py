@@ -65,6 +65,7 @@ if __name__ == '__main__':
 
     spawn_loc = Pose(position=Point(x=0.6, y=0.6, z=0.78))
     spawn = rospy.Publisher("spawn_chessboard", Pose, queue_size=5)
+    chess = rospy.Publisher("play_chess", Empty)
 
 
     for row, each in enumerate(board_setup):
@@ -74,7 +75,7 @@ if __name__ == '__main__':
             pose.position.x = board_pose.position.x + frame_dist + origin_piece + row * (2 * origin_piece)
             pose.position.y = board_pose.position.y - 0.55 + frame_dist + origin_piece + col * (2 * origin_piece)
             pose.position.z += 0.018
-            piece_positionmap[str(piece)+str(col)] = [pose.position.x, pose.position.y, pose.position.z-0.93] #0.93 to compensate Gazebo RViz origin difference
+            piece_positionmap[str(row)+str(col)] = [pose.position.x, pose.position.y, pose.position.z-0.93] #0.93 to compensate Gazebo RViz origin difference
             if piece in list_pieces:
                 piece_name = "%s%d" % (piece, col)
                 piece_names.append(piece_name)
@@ -90,3 +91,5 @@ if __name__ == '__main__':
     rospy.set_param('piece_target_position_map', piece_positionmap) # 3D positions for each square in the chessboard
     rospy.set_param('piece_names', piece_names) # Pieces that will be part of the game
     rospy.set_param('pieces_xml', pieces_xml) # File paths to Gazebo models, i.e. SDF files
+
+    chess.publish(Empty())
