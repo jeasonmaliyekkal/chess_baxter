@@ -145,9 +145,9 @@ def play_chess(data, args):
     positions = rospy.get_param('piece_target_position_map')
 
     # row, col of r0, r7, k2, K7, R0, R7
-    pick_list = ['00', '07', '20', '57', '70', '77']
+    pick_list = ['20', '70', '31', '77', '07', '56']
     # row, col to move the pieces to
-    place_list = ['04', '05', '21', '56', '50', '71']
+    place_list = ['31', '71', '30', '75', '06', '55']
 
     pick_poses = list()
     place_poses = list()
